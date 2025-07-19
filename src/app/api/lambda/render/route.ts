@@ -16,6 +16,12 @@ import { executeApi } from "../../../../helpers/api-response";
 export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
   RenderRequest,
   async (req, body) => {
+    console.log('Environment check:', {
+  hasAWS: !!process.env.AWS_ACCESS_KEY_ID,
+  hasREMOTION: !!process.env.REMOTION_AWS_ACCESS_KEY_ID,
+  hasAWSSecret: !!process.env.AWS_SECRET_ACCESS_KEY,
+  hasREMOTIONSecret: !!process.env.REMOTION_AWS_SECRET_ACCESS_KEY
+});
     if (
       !process.env.AWS_ACCESS_KEY_ID &&
       !process.env.REMOTION_AWS_ACCESS_KEY_ID
@@ -44,7 +50,7 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
       serveUrl: SITE_NAME,
       composition: body.id,
       inputProps: body.inputProps,
-      framesPerLambda: 10,
+      framesPerLambda: 30,
       downloadBehavior: {
         type: "download",
         fileName: "video.mp4",
