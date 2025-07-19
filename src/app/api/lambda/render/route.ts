@@ -12,7 +12,6 @@ import {
 } from "../../../../../config.mjs";
 import { RenderRequest } from "../../../../../types/schema";
 import { executeApi } from "../../../../helpers/api-response";
-import { stringify } from "querystring";
 
 export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
   RenderRequest,
