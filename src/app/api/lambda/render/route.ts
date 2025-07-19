@@ -16,11 +16,12 @@ import { executeApi } from "../../../../helpers/api-response";
 export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
   RenderRequest,
   async (req, body) => {
+
     if (
       !process.env.AWS_ACCESS_KEY_ID &&
       !process.env.REMOTION_AWS_ACCESS_KEY_ID
     ) {
-       throw new TypeError("asdsad: " + process.env.REMOTION_AWS_ACCESS_KEY_ID);
+      
       throw new TypeError(
         "Set up Remotion Lambda to render videos. See the README.md for how to do so.",
       );
