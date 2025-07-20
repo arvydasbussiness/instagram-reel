@@ -55,13 +55,15 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
             height: '100%',
             objectFit: 'cover',
           }}
-          // Mute the original video audio if we're adding custom audio
-          muted={!!audioSource}
+          // Always mute to allow autoplay
+          muted
+          // Control volume based on whether we have custom audio
+          volume={audioSource ? 0 : 1}
         />
       </AbsoluteFill>
 
-      {/* Audio layer - wrapped in Sequence for delay control */}
-      {audioSrc && (
+      {/* Audio layer - only render if audioSource is provided and not empty */}
+      {audioSrc && audioSource && audioSource.trim() !== '' && (
         <Sequence from={audioDelay}>
           <Audio
             src={audioSrc}
@@ -91,7 +93,7 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
           }}
         >
           <div>Frame: {frame} / {durationInFrames}</div>
-          {audioSource && (
+          {audioSource && audioSource.trim() !== '' && (
             <div style={{ marginTop: 5, fontSize: 12 }}>
               Audio: {audioSource} (Vol: {audioVolume})
             </div>

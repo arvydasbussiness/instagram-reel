@@ -15,23 +15,17 @@ import {
 import { RenderControls } from "../components/RenderControls";
 import { Spacing } from "../components/Spacing";
 import { Tips } from "../components/Tips";
-import { Main } from "../remotion/MyComp/Main";
+import { InstagramReel } from "../remotion/InstagramReel/InstagramReel";
 
 const Home: NextPage = () => {
-  const [text, setText] = useState<string>(defaultMyCompProps.title);
-
-  const inputProps: z.infer<typeof CompositionProps> = useMemo(() => {
-    return {
-      title: text,
-    };
-  }, [text]);
+  const [inputProps, setInputProps] = useState<z.infer<typeof CompositionProps>>(defaultMyCompProps);
 
   return (
     <div>
       <div className="max-w-screen-md m-auto mb-5">
         <div className="overflow-hidden rounded-geist shadow-[0_0_200px_rgba(0,0,0,0.15)] mb-10 mt-16">
           <Player
-            component={Main}
+            component={InstagramReel}
             inputProps={inputProps}
             durationInFrames={DURATION_IN_FRAMES}
             fps={VIDEO_FPS}
@@ -48,9 +42,8 @@ const Home: NextPage = () => {
           />
         </div>
         <RenderControls
-          text={text}
-          setText={setText}
           inputProps={inputProps}
+          setInputProps={setInputProps}
         ></RenderControls>
         <Spacing></Spacing>
         <Spacing></Spacing>

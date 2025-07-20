@@ -14,7 +14,7 @@ export const defaultInstagramReelProps = {
   isLocalFile: true, // Set to true for local files, false for URLs
   
   // Audio settings (optional)
-  audioSource: "test-audio.mp3", // Example: "background-music.mp3" - Put in public/audio/
+  audioSource: "test-audio.mp3", // Leave empty to disable audio, or add "test-audio.mp3" to enable
   isAudioLocal: true, // Set to true for local audio files, false for URLs
   audioVolume: 0.8, // Volume level (0 to 1)
   audioStartFrom: undefined, // Start audio from specific frame (optional)

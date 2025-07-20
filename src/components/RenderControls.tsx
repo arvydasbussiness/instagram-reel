@@ -4,17 +4,15 @@ import { Button } from "./Button";
 import { InputContainer } from "./Container";
 import { DownloadButton } from "./DownloadButton";
 import { ErrorComp } from "./Error";
-import { Input } from "./Input";
 import { ProgressBar } from "./ProgressBar";
 import { Spacing } from "./Spacing";
 import { COMP_NAME, CompositionProps } from "../../types/constants";
 import { useRendering } from "../helpers/use-rendering";
 
 export const RenderControls: React.FC<{
-  text: string;
-  setText: React.Dispatch<React.SetStateAction<string>>;
   inputProps: z.infer<typeof CompositionProps>;
-}> = ({ text, setText, inputProps }) => {
+  setInputProps: React.Dispatch<React.SetStateAction<z.infer<typeof CompositionProps>>>;
+}> = ({ inputProps, setInputProps }) => {
   const { renderMedia, state, undo } = useRendering(COMP_NAME, inputProps);
 
   return (
@@ -23,11 +21,44 @@ export const RenderControls: React.FC<{
       state.status === "invoking" ||
       state.status === "error" ? (
         <>
-          <Input
-            disabled={state.status === "invoking"}
-            setText={setText}
-            text={text}
-          ></Input>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Video Source</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={inputProps.videoSource}
+                onChange={(e) => setInputProps({...inputProps, videoSource: e.target.value})}
+                placeholder="test-video.mp4"
+                disabled={state.status === "invoking"}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Audio Source (optional)</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={inputProps.audioSource}
+                onChange={(e) => setInputProps({...inputProps, audioSource: e.target.value})}
+                placeholder="test-audio.mp3"
+                disabled={state.status === "invoking"}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Audio Volume</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                className="w-full"
+                value={inputProps.audioVolume}
+                onChange={(e) => setInputProps({...inputProps, audioVolume: parseFloat(e.target.value)})}
+                disabled={state.status === "invoking"}
+              />
+              <span className="text-sm text-gray-500">{inputProps.audioVolume}</span>
+            </div>
+          </div>
           <Spacing></Spacing>
           <AlignEnd>
             <Button
