@@ -9,6 +9,7 @@ export const VideoInstructions: React.FC = () => {
         color: 'white',
         padding: 50,
         fontFamily: 'Arial, sans-serif',
+        overflowY: 'auto',
       }}
     >
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -16,7 +17,7 @@ export const VideoInstructions: React.FC = () => {
         
         <div style={{ fontSize: 20, lineHeight: 1.6 }}>
           <h2 style={{ fontSize: 32, marginTop: 40, marginBottom: 20 }}>
-            How to add your video:
+            📹 How to add your video:
           </h2>
           
           <ol style={{ paddingLeft: 30 }}>
@@ -33,35 +34,80 @@ export const VideoInstructions: React.FC = () => {
             </li>
             
             <li style={{ marginBottom: 15 }}>
-              Update the filename in: <br />
+              Update the filename in constants.ts
+            </li>
+          </ol>
+
+          <h2 style={{ fontSize: 32, marginTop: 40, marginBottom: 20 }}>
+            🎵 How to add audio:
+          </h2>
+          
+          <ol style={{ paddingLeft: 30 }}>
+            <li style={{ marginBottom: 15 }}>
+              Copy your audio file to: <br />
               <code style={{ 
                 backgroundColor: '#333', 
                 padding: '5px 10px', 
                 borderRadius: 5,
                 fontSize: 18 
               }}>
-                src\remotion\InstagramReel\constants.ts
+                C:\Git\remotion\instagram-reel\public\audio\
               </code>
             </li>
             
             <li style={{ marginBottom: 15 }}>
-              Run: <code style={{ 
+              Update audio settings in constants.ts:
+              <pre style={{ 
                 backgroundColor: '#333', 
-                padding: '5px 10px', 
+                padding: 10, 
                 borderRadius: 5,
-                fontSize: 18 
-              }}>npm start</code> and select "InstagramReel"
+                fontSize: 16,
+                marginTop: 10 
+              }}>
+{`audioSource: "background-music.mp3",
+audioVolume: 0.8,
+audioDelay: 0,`}
+              </pre>
             </li>
           </ol>
           
           <h3 style={{ fontSize: 24, marginTop: 40, marginBottom: 15 }}>
             Supported formats:
           </h3>
-          <ul style={{ paddingLeft: 30 }}>
-            <li>MP4 (recommended)</li>
-            <li>WebM</li>
-            <li>MOV</li>
-          </ul>
+          <div style={{ display: 'flex', gap: 40 }}>
+            <div>
+              <strong>Video:</strong>
+              <ul style={{ paddingLeft: 20, marginTop: 5 }}>
+                <li>MP4 (recommended)</li>
+                <li>WebM</li>
+                <li>MOV</li>
+              </ul>
+            </div>
+            <div>
+              <strong>Audio:</strong>
+              <ul style={{ paddingLeft: 20, marginTop: 5 }}>
+                <li>MP3 (recommended)</li>
+                <li>WAV</li>
+                <li>M4A</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3 style={{ fontSize: 24, marginTop: 30, marginBottom: 15 }}>
+            Run the project:
+          </h3>
+          <code style={{ 
+            backgroundColor: '#333', 
+            padding: '10px 15px', 
+            borderRadius: 5,
+            fontSize: 18,
+            display: 'block'
+          }}>
+            npm start
+          </code>
+          <p style={{ marginTop: 10, fontSize: 16 }}>
+            Then select "InstagramReel" from the composition dropdown
+          </p>
         </div>
       </div>
     </AbsoluteFill>

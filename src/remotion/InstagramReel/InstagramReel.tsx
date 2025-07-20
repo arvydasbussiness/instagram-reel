@@ -1,15 +1,35 @@
 import React from 'react';
-import { AbsoluteFill, OffthreadVideo, useCurrentFrame, useVideoConfig, staticFile } from 'remotion';
+import { 
+  AbsoluteFill, 
+  OffthreadVideo, 
+  Audio,
+  useCurrentFrame, 
+  useVideoConfig, 
+  staticFile,
+  Sequence
+} from 'remotion';
 
 // Props interface for the Instagram Reel component
 export interface InstagramReelProps {
   videoSource: string; // Can be a URL or a local file name
   isLocalFile?: boolean; // Flag to indicate if it's a local file
+  audioSource?: string; // Optional audio file
+  isAudioLocal?: boolean; // Flag for audio file location
+  audioVolume?: number; // Audio volume (0-1)
+  audioStartFrom?: number; // Start audio from specific frame
+  audioEndAt?: number; // End audio at specific frame
+  audioDelay?: number; // Delay audio by frames
 }
 
 export const InstagramReel: React.FC<InstagramReelProps> = ({ 
   videoSource, 
-  isLocalFile = true // Default to local file for testing
+  isLocalFile = true,
+  audioSource,
+  isAudioLocal = true,
+  audioVolume = 1,
+  audioStartFrom,
+  audioEndAt,
+  audioDelay = 0,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -18,6 +38,11 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   const videoSrc = isLocalFile 
     ? staticFile(`videos/${videoSource}`) 
     : videoSource;
+
+  // Determine the audio source if provided
+  const audioSrc = audioSource
+    ? (isAudioLocal ? staticFile(`audio/${audioSource}`) : audioSource)
+    : null;
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -30,8 +55,22 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
             height: '100%',
             objectFit: 'cover',
           }}
+          // Mute the original video audio if we're adding custom audio
+          muted={!!audioSource}
         />
       </AbsoluteFill>
+
+      {/* Audio layer - wrapped in Sequence for delay control */}
+      {audioSrc && (
+        <Sequence from={audioDelay}>
+          <Audio
+            src={audioSrc}
+            volume={audioVolume}
+            startFrom={audioStartFrom}
+            endAt={audioEndAt}
+          />
+        </Sequence>
+      )}
 
       {/* Debug info for testing */}
       <AbsoluteFill
@@ -51,7 +90,12 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
             fontFamily: 'Arial, sans-serif',
           }}
         >
-          Frame: {frame} / {durationInFrames}
+          <div>Frame: {frame} / {durationInFrames}</div>
+          {audioSource && (
+            <div style={{ marginTop: 5, fontSize: 12 }}>
+              Audio: {audioSource} (Vol: {audioVolume})
+            </div>
+          )}
         </div>
       </AbsoluteFill>
 
