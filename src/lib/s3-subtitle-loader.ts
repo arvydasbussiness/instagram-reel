@@ -1,18 +1,32 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getRemotionEnvironment } from 'remotion';
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 
 // Create S3 client inside function to ensure env vars are loaded
 function createS3Client() {
-  const env = getRemotionEnvironment();
+  // Multiple ways to detect Lambda environment
+  const isLambda = !!(
+    process.env.AWS_LAMBDA_FUNCTION_NAME || 
+    process.env.LAMBDA_TASK_ROOT ||
+    process.env.AWS_EXECUTION_ENV?.includes('AWS_Lambda')
+  );
   
-  // Check if running in Lambda/rendering environment (not Studio or Player)
-  const isRenderEnvironment = !env.isStudio && !env.isPlayer;
+  const isRemotionLambda = process.env.REMOTION_LAMBDA === '1';
   
-  // In Lambda/render environment, use default credentials from execution role
-  if (isRenderEnvironment) {
-    console.log('Creating S3 client for render/Lambda environment');
+  console.log('S3 Client Environment Detection:', {
+    AWS_LAMBDA_FUNCTION_NAME: process.env.AWS_LAMBDA_FUNCTION_NAME || 'not set',
+    LAMBDA_TASK_ROOT: process.env.LAMBDA_TASK_ROOT || 'not set',
+    AWS_EXECUTION_ENV: process.env.AWS_EXECUTION_ENV || 'not set',
+    REMOTION_LAMBDA: process.env.REMOTION_LAMBDA || 'not set',
+    isLambda,
+    isRemotionLambda
+  });
+  
+  // In Lambda or Remotion Lambda environment
+  if (isLambda || isRemotionLambda) {
+    console.log('Creating S3 client for Lambda environment - using default provider chain');
     return new S3Client({
-      region: process.env.AWS_REGION || process.env.REMOTION_AWS_REGION || "eu-north-1"
+      region: process.env.AWS_REGION || process.env.REMOTION_AWS_REGION || "eu-north-1",
+      credentials: fromNodeProviderChain()
     });
   }
   
@@ -21,7 +35,7 @@ function createS3Client() {
   const secretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
   const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";
 
-  console.log('Creating S3 client for Studio/Player environment');
+  console.log('Creating S3 client for non-Lambda environment');
   
   // Only pass credentials if they exist
   const clientConfig: {
@@ -111,23 +125,7 @@ export async function loadSubtitlesFromS3(
 
   } catch (error) {
     console.error('Error loading subtitles from S3:', error);
-    
-    // In development, try loading from local file as fallback
-    const env = getRemotionEnvironment();
-    if (env.isStudio || env.isPlayer) {
-      try {
-        console.log('Attempting to load from local file...');
-        const { staticFile } = await import('remotion');
-        const response = await fetch(staticFile(`subs/${subtitleKey}`));
-        const data = await response.json();
-        subtitleCache[cacheKey] = data;
-        return data;
-      } catch (localError) {
-        console.error('Local file fallback failed:', localError);
-      }
-    }
-    
-    return [];
+    throw error; // Re-throw the error instead of falling back to local files
   }
 }
 

@@ -8,8 +8,7 @@ import {
   staticFile,
   Sequence,
   continueRender,
-  delayRender,
-  getRemotionEnvironment
+  delayRender
 } from 'remotion';
 import { loadSubtitlesFromS3, SubtitleSegment, getSubtitleAtTime } from '../../lib/s3-subtitle-loader';
 import { z } from 'zod';
@@ -113,39 +112,18 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
       }
 
       try {
-        setLoadingStatus('Loading subtitles...');
+        setLoadingStatus('Loading subtitles from S3...');
         
-        // Check if we're in development/studio
-        const env = getRemotionEnvironment();
-        
-        if (env.isStudio || env.isPlayer) {
-          // In development, try to load from local file first
-          try {
-            console.log(`Loading local subtitle file: subs/${subtitlesFile}`);
-            const response = await fetch(staticFile(`subs/${subtitlesFile}`));
-            const data = await response.json();
-            
-            if (Array.isArray(data)) {
-              setSubtitles(data);
-              setLoadingStatus(`Loaded ${data.length} subtitles from local file`);
-              console.log(`Successfully loaded ${data.length} subtitles from local file`);
-              if (handle) continueRender(handle);
-              return;
-            }
-          } catch (localError) {
-            console.log('Failed to load local subtitles, trying S3...', localError);
-          }
-        }
-        
-        // Load from S3 (for Lambda or if local fails)
+        // Always load from S3, no local fallback
         const loadedSubtitles = await loadSubtitlesFromS3(subtitlesFile, bucketName);
         setSubtitles(loadedSubtitles);
         setLoadingStatus(`Loaded ${loadedSubtitles.length} subtitles from S3`);
+        console.log(`Successfully loaded ${loadedSubtitles.length} subtitles from S3`);
         if (handle) continueRender(handle);
         
       } catch (error) {
-        console.error('Failed to load subtitles:', error);
-        setLoadingStatus('Failed to load subtitles');
+        console.error('Failed to load subtitles from S3:', error);
+        setLoadingStatus('Failed to load subtitles from S3');
         if (handle) continueRender(handle);
       }
     }
