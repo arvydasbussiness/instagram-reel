@@ -21,6 +21,11 @@ export const defaultInstagramReelProps = {
   audioEndAt: undefined, // End audio at specific frame (optional)
   audioDelay: 0, // Delay audio start by frames (default: 0)
   
+  // Subtitle settings (optional)
+  subtitlesFile: "", // JSON file with subtitles (e.g., "test-audio.json")
+  subtitleStyle: "instagram" as "instagram" | "classic", // Subtitle style
+  showDebugInfo: false, // Show debug overlay
+  
   // For remote URL usage:
   // videoSource: "https://example.com/your-video.mp4",
   // isLocalFile: false,

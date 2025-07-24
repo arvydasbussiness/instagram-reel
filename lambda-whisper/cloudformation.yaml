@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Whisper.cpp Lambda for subtitle generation'
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: S3 bucket name for audio files and subtitles
+    Default: your-remotion-bucket
+
+Resources:
+  # Lambda Layer for Whisper.cpp
+  WhisperLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: whisper-cpp-layer
+      Description: Whisper.cpp binary and model
+      Content:
+        S3Bucket: !Ref BucketName
+        S3Key: layers/whisper-layer.zip
+      CompatibleRuntimes:
+        - nodejs18.x
+        - nodejs20.x
+      CompatibleArchitectures:
+        - x86_64
+
+  # Lambda Execution Role
+  WhisperLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${BucketName}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::${BucketName}'
+
+  # Lambda Function
+  WhisperFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: whisper-subtitle-generator
+      Description: Generate subtitles using Whisper.cpp
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Code:
+        S3Bucket: !Ref BucketName
+        S3Key: functions/whisper-function.zip
+      Layers:
+        - !Ref WhisperLayer
+      Role: !GetAtt WhisperLambdaRole.Arn
+      Timeout: 300 # 5 minutes
+      MemorySize: 3008 # Maximum memory for better performance
+      Environment:
+        Variables:
+          NODE_OPTIONS: '--enable-source-maps'
+      Architectures:
+        - x86_64
+
+  # Allow your main Lambda to invoke this function
+  WhisperInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref WhisperFunction
+      Action: lambda:InvokeFunction
+      Principal: !Sub '${AWS::AccountId}'
+
+Outputs:
+  WhisperFunctionArn:
+    Description: ARN of the Whisper Lambda function
+    Value: !GetAtt WhisperFunction.Arn
+  WhisperFunctionName:
+    Description: Name of the Whisper Lambda function
+    Value: !Ref WhisperFunction
+  LayerArn:
+    Description: ARN of the Whisper Lambda layer
+    Value: !Ref WhisperLayer

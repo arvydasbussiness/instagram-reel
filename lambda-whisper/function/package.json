@@ -1,0 +1,13 @@
+{
+  "name": "whisper-lambda-function",
+  "version": "1.0.0",
+  "description": "Lambda function for Whisper.cpp subtitle generation",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "zip -r function.zip index.js package.json package-lock.json node_modules"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0"
+  }
+}

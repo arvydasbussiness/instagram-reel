@@ -6,20 +6,73 @@ import {
   useCurrentFrame, 
   useVideoConfig, 
   staticFile,
-  Sequence
+  Sequence,
+  continueRender,
+  delayRender
 } from 'remotion';
+import { loadSubtitlesFromS3, SubtitleSegment, getSubtitleAtTime } from '../../lib/s3-subtitle-loader';
 
-// Props interface for the Instagram Reel component
 export interface InstagramReelProps {
-  videoSource: string; // Can be a URL or a local file name
-  isLocalFile?: boolean; // Flag to indicate if it's a local file
-  audioSource?: string; // Optional audio file
-  isAudioLocal?: boolean; // Flag for audio file location
-  audioVolume?: number; // Audio volume (0-1)
-  audioStartFrom?: number; // Start audio from specific frame
-  audioEndAt?: number; // End audio at specific frame
-  audioDelay?: number; // Delay audio by frames
+  videoSource: string;
+  isLocalFile?: boolean;
+  audioSource?: string;
+  isAudioLocal?: boolean;
+  audioVolume?: number;
+  audioStartFrom?: number;
+  audioEndAt?: number;
+  audioDelay?: number;
+  subtitlesFile?: string;
+  subtitleStyle?: 'instagram' | 'classic';
+  showDebugInfo?: boolean;
+  bucketName?: string;
 }
+
+// Simple subtitle renderer
+const SubtitleDisplay: React.FC<{ 
+  subtitle: SubtitleSegment | null; 
+  style: 'instagram' | 'classic';
+}> = ({ subtitle, style }) => {
+  if (!subtitle) return null;
+
+  return (
+    <AbsoluteFill
+      style={{
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingBottom: style === 'instagram' ? '15%' : '10%',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: style === 'instagram' ? '20px 40px' : '15px 30px',
+          borderRadius: style === 'instagram' ? 15 : 8,
+          maxWidth: '90%',
+          textAlign: 'center',
+          border: style === 'instagram' ? '3px solid rgba(255, 215, 0, 0.3)' : 'none',
+        }}
+      >
+        <span
+          style={{
+            color: style === 'instagram' ? '#FFD700' : '#FFFFFF',
+            fontSize: style === 'instagram' ? 48 : 36,
+            fontWeight: style === 'instagram' ? '900' : '700',
+            textShadow: style === 'instagram' 
+              ? '4px 4px 8px rgba(0, 0, 0, 0.9)' 
+              : '2px 2px 4px rgba(0, 0, 0, 0.8)',
+            fontFamily: style === 'instagram' 
+              ? 'Arial Black, sans-serif' 
+              : 'Arial, sans-serif',
+            textTransform: style === 'instagram' ? 'uppercase' : 'none',
+            letterSpacing: style === 'instagram' ? '1px' : '0',
+          }}
+        >
+          {subtitle.text}
+        </span>
+      </div>
+    </AbsoluteFill>
+  );
+};
 
 export const InstagramReel: React.FC<InstagramReelProps> = ({ 
   videoSource, 
@@ -30,19 +83,52 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   audioStartFrom,
   audioEndAt,
   audioDelay = 0,
+  subtitlesFile,
+  subtitleStyle = 'instagram',
+  showDebugInfo = false,
+  bucketName,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
+  const currentTime = frame / fps;
+  
+  // State for subtitles
+  const [subtitles, setSubtitles] = React.useState<SubtitleSegment[]>([]);
+  const [loadingStatus, setLoadingStatus] = React.useState<string>('');
+  const [handle] = React.useState(() => subtitlesFile ? delayRender() : null);
 
-  // Determine the video source
+  // Determine sources
   const videoSrc = isLocalFile 
     ? staticFile(`videos/${videoSource}`) 
     : videoSource;
 
-  // Determine the audio source if provided
   const audioSrc = audioSource
     ? (isAudioLocal ? staticFile(`audio/${audioSource}`) : audioSource)
     : null;
+
+  // Load subtitles from S3
+  React.useEffect(() => {
+    if (subtitlesFile && subtitlesFile.trim() !== '') {
+      setLoadingStatus('Loading subtitles from S3...');
+      
+      loadSubtitlesFromS3(subtitlesFile, bucketName)
+        .then(loadedSubtitles => {
+          setSubtitles(loadedSubtitles);
+          setLoadingStatus(`Loaded ${loadedSubtitles.length} subtitles`);
+          if (handle) continueRender(handle);
+        })
+        .catch(error => {
+          console.error('Failed to load subtitles:', error);
+          setLoadingStatus('Failed to load subtitles');
+          if (handle) continueRender(handle);
+        });
+    } else if (handle) {
+      continueRender(handle);
+    }
+  }, [subtitlesFile, bucketName, handle]);
+
+  // Get current subtitle
+  const currentSubtitle = getSubtitleAtTime(subtitles, currentTime - (audioDelay / fps));
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -55,14 +141,12 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
             height: '100%',
             objectFit: 'cover',
           }}
-          // Always mute to allow autoplay
           muted
-          // Control volume based on whether we have custom audio
           volume={audioSource ? 0 : 1}
         />
       </AbsoluteFill>
 
-      {/* Audio layer - only render if audioSource is provided and not empty */}
+      {/* Audio layer */}
       {audioSrc && audioSource && audioSource.trim() !== '' && (
         <Sequence from={audioDelay}>
           <Audio
@@ -74,43 +158,72 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
         </Sequence>
       )}
 
-      {/* Debug info for testing */}
-      <AbsoluteFill
-        style={{
-          justifyContent: 'flex-start',
-          alignItems: 'flex-start',
-          padding: 20,
-        }}
-      >
-        <div
+      {/* Subtitle layer */}
+      {subtitles.length > 0 && (
+        <Sequence from={audioDelay}>
+          <SubtitleDisplay subtitle={currentSubtitle} style={subtitleStyle} />
+        </Sequence>
+      )}
+
+      {/* Debug info */}
+      {showDebugInfo && (
+        <AbsoluteFill
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            color: 'white',
-            padding: '10px 15px',
-            borderRadius: 5,
-            fontSize: 14,
-            fontFamily: 'Arial, sans-serif',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
+            padding: 20,
+            pointerEvents: 'none',
           }}
         >
-          <div>Frame: {frame} / {durationInFrames}</div>
-          {audioSource && audioSource.trim() !== '' && (
-            <div style={{ marginTop: 5, fontSize: 12 }}>
-              Audio: {audioSource} (Vol: {audioVolume})
+          <div
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              color: 'white',
+              padding: '15px',
+              borderRadius: 8,
+              fontSize: 14,
+              fontFamily: 'monospace',
+              lineHeight: 1.6,
+              maxWidth: 400,
+            }}
+          >
+            <div style={{ fontWeight: 'bold', marginBottom: 10, fontSize: 16 }}>
+              🎬 Debug Info
             </div>
-          )}
-        </div>
-      </AbsoluteFill>
+            <div>Frame: {frame} / {durationInFrames}</div>
+            <div>Time: {currentTime.toFixed(2)}s</div>
+            <div>Adjusted Time: {(currentTime - audioDelay / fps).toFixed(2)}s</div>
+            
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #555' }}>
+              <div>📹 Video: {videoSource}</div>
+              {audioSource && <div>🎵 Audio: {audioSource}</div>}
+              <div>🔊 Volume: {audioVolume}</div>
+              {audioDelay > 0 && <div>⏱️ Audio Delay: {audioDelay} frames</div>}
+            </div>
 
-      {/* You can add overlays, text, effects here later */}
-      <AbsoluteFill
-        style={{
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          padding: 50,
-        }}
-      >
-        {/* Add your text overlays, animations, etc. here */}
-      </AbsoluteFill>
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #555' }}>
+              <div>📝 Subtitles: {loadingStatus}</div>
+              {subtitlesFile && <div>📄 File: {subtitlesFile}</div>}
+              {bucketName && <div>🪣 Bucket: {bucketName}</div>}
+              <div>🎨 Style: {subtitleStyle}</div>
+              
+              {currentSubtitle ? (
+                <div style={{ marginTop: 10, padding: 10, backgroundColor: 'rgba(255, 215, 0, 0.2)', borderRadius: 5 }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: 5 }}>Current Subtitle:</div>
+                  <div>"{currentSubtitle.text}"</div>
+                  <div style={{ fontSize: 12, color: '#aaa', marginTop: 5 }}>
+                    {currentSubtitle.start}s - {currentSubtitle.end}s
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 10, color: '#666' }}>
+                  No subtitle at current time
+                </div>
+              )}
+            </div>
+          </div>
+        </AbsoluteFill>
+      )}
     </AbsoluteFill>
   );
 };
