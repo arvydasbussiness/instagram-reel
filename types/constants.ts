@@ -22,7 +22,7 @@ export const CompositionProps = z.object({
 export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
   videoSource: "test-video.mp4",
   isLocalFile: true,
-  audioSource: "", // Empty string to disable audio by default
+  audioSource: "test-audio.mp3", // Empty string to disable audio by default
   isAudioLocal: true,
   audioVolume: 0.8,
   audioStartFrom: undefined,
