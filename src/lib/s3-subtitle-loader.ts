@@ -1,4 +1,4 @@
-import { staticFile } from 'remotion';
+import { subtitles } from '../data/subtitles';
 
 export interface SubtitleSegment {
   start: number;
@@ -10,7 +10,7 @@ export interface SubtitleSegment {
 const subtitleCache: Record<string, SubtitleSegment[]> = {};
 
 /**
- * Load subtitles - tries multiple approaches
+ * Load subtitles from embedded data
  */
 export async function loadSubtitlesFromS3(
   subtitleKey: string,
@@ -24,33 +24,25 @@ export async function loadSubtitlesFromS3(
   }
 
   try {
-    // In Remotion Lambda, files in public/ are bundled with the site
-    // Try to load from the bundled assets first
-    try {
-      const staticUrl = staticFile(`subs/${subtitleKey}`);
-      console.log(`Trying to load subtitles from static file: ${staticUrl}`);
-      
-      const response = await fetch(staticUrl);
-      if (response.ok) {
-        const subtitles = await response.json() as SubtitleSegment[];
-        
-        // Validate format
-        if (!Array.isArray(subtitles)) {
-          throw new Error('Invalid subtitle format: expected array');
-        }
-        
-        // Cache the result
-        subtitleCache[cacheKey] = subtitles;
-        
-        console.log(`Loaded ${subtitles.length} subtitle segments from static file`);
-        return subtitles;
-      }
-    } catch (staticError) {
-      console.log('Static file approach failed:', staticError);
+    // Load from embedded data
+    const subtitleData = subtitles[subtitleKey];
+    
+    if (!subtitleData) {
+      console.error(`Subtitle file not found: ${subtitleKey}`);
+      console.log('Available subtitle files:', Object.keys(subtitles));
+      throw new Error(`Subtitle file not found in embedded data: ${subtitleKey}`);
     }
-
-    // If static file fails, throw error
-    throw new Error('Failed to load subtitles - ensure subtitles are in public/subs/ directory');
+    
+    // Validate format
+    if (!Array.isArray(subtitleData)) {
+      throw new Error('Invalid subtitle format: expected array');
+    }
+    
+    // Cache the result
+    subtitleCache[cacheKey] = subtitleData;
+    
+    console.log(`Loaded ${subtitleData.length} subtitle segments from embedded data`);
+    return subtitleData;
 
   } catch (error) {
     console.error('Error loading subtitles:', error);

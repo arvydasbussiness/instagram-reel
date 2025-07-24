@@ -18,6 +18,11 @@ export const CompositionProps = z.object({
   subtitlesFile: z.string().optional(),
   bucketName: z.string().optional(),
   subtitleStyle: z.enum(['instagram', 'classic']).optional(),
+  subtitleData: z.array(z.object({
+    start: z.number(),
+    end: z.number(),
+    text: z.string()
+  })).optional(), // Pass subtitle data directly
   
   // Debug settings
   showDebugInfo: z.boolean().optional(),
@@ -26,16 +31,16 @@ export const CompositionProps = z.object({
 export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
   videoSource: "test-video.mp4",
   isLocalFile: true,
-  audioSource: "test-audio.mp3", // Empty string to disable audio by default
+  audioSource: "test-audio.mp3",
   isAudioLocal: true,
   audioVolume: 0.8,
   audioStartFrom: undefined,
   audioEndAt: undefined,
   audioDelay: 0,
-  subtitlesFile: "test-audio.json", // Add test subtitle file
+  subtitlesFile: undefined, // Don't specify file - let it generate fresh
   bucketName: undefined,
-  subtitleStyle: 'instagram', // Add subtitle style
-  showDebugInfo: true, // Enable debug info to see what's happening
+  subtitleStyle: 'instagram',
+  showDebugInfo: true,
 };
 
 export const DURATION_IN_FRAMES = 900;

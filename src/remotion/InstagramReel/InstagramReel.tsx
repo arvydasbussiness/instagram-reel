@@ -74,6 +74,7 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   audioEndAt,
   audioDelay = 0,
   subtitlesFile,
+  subtitleData, // New prop for direct subtitle data
   subtitleStyle = 'instagram',
   showDebugInfo = false,
   bucketName,
@@ -81,6 +82,7 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   // Debug logging
   console.log('InstagramReel props received:', {
     subtitlesFile,
+    subtitleData: subtitleData ? `${subtitleData.length} segments` : 'none',
     bucketName,
     audioSource,
   });
@@ -92,7 +94,7 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   // State for subtitles
   const [subtitles, setSubtitles] = React.useState<SubtitleSegment[]>([]);
   const [loadingStatus, setLoadingStatus] = React.useState<string>('');
-  const [handle] = React.useState(() => subtitlesFile ? delayRender() : null);
+  const [handle] = React.useState(() => (subtitlesFile || subtitleData) ? delayRender() : null);
 
   // Determine sources
   const videoSrc = isLocalFile 
@@ -106,30 +108,40 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   // Load subtitles
   React.useEffect(() => {
     async function loadSubtitles() {
+      // If subtitle data is provided directly, use it
+      if (subtitleData && subtitleData.length > 0) {
+        setSubtitles(subtitleData);
+        setLoadingStatus(`Using ${subtitleData.length} subtitle segments from props`);
+        console.log(`Using ${subtitleData.length} subtitle segments passed directly in props`);
+        if (handle) continueRender(handle);
+        return;
+      }
+      
+      // Otherwise try to load from file
       if (!subtitlesFile || subtitlesFile.trim() === '') {
         if (handle) continueRender(handle);
         return;
       }
 
       try {
-        setLoadingStatus('Loading subtitles from S3...');
+        setLoadingStatus('Loading subtitles from file...');
         
-        // Always load from S3, no local fallback
+        // Load from S3 or embedded data
         const loadedSubtitles = await loadSubtitlesFromS3(subtitlesFile, bucketName);
         setSubtitles(loadedSubtitles);
-        setLoadingStatus(`Loaded ${loadedSubtitles.length} subtitles from S3`);
-        console.log(`Successfully loaded ${loadedSubtitles.length} subtitles from S3`);
+        setLoadingStatus(`Loaded ${loadedSubtitles.length} subtitles from file`);
+        console.log(`Successfully loaded ${loadedSubtitles.length} subtitles from file`);
         if (handle) continueRender(handle);
         
       } catch (error) {
-        console.error('Failed to load subtitles from S3:', error);
-        setLoadingStatus('Failed to load subtitles from S3');
+        console.error('Failed to load subtitles:', error);
+        setLoadingStatus('Failed to load subtitles');
         if (handle) continueRender(handle);
       }
     }
     
     loadSubtitles();
-  }, [subtitlesFile, bucketName, handle]);
+  }, [subtitlesFile, subtitleData, bucketName, handle]);
 
   // Get current subtitle
   const currentSubtitle = getSubtitleAtTime(subtitles, currentTime - (audioDelay / fps));

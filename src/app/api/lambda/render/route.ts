@@ -54,60 +54,49 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
 
     const bucketName = process.env.REMOTION_S3_BUCKET_NAME || SITE_NAME.split('/').pop() || 'your-remotion-bucket';
 
-    // Handle subtitles - either use existing or generate new ones
-    if (body.inputProps.subtitlesFile && body.inputProps.subtitlesFile.trim() !== '') {
-      // Subtitles file is already specified, ensure it's uploaded to S3
-      console.log(`Using existing subtitle file: ${body.inputProps.subtitlesFile}`);
-      
-      // Check if it needs to be uploaded from local to S3
-      const { createAWSClients } = await import("../../../../helpers/generate-subtitles-whisper-lambda");
-      const { s3Client } = createAWSClients();
-      const { HeadObjectCommand, PutObjectCommand } = await import("@aws-sdk/client-s3");
-      const subtitleKey = `subs/${body.inputProps.subtitlesFile}`;
-      
-      try {
-        // Check if already in S3
-        await s3Client.send(new HeadObjectCommand({
-          Bucket: bucketName,
-          Key: subtitleKey
-        }));
-        console.log(`Subtitle file already exists in S3: ${subtitleKey}`);
-      } catch {
-        // Not in S3, try to upload from local
-        console.log(`Uploading local subtitle file to S3: ${subtitleKey}`);
-        try {
-          const localPath = path.join(process.cwd(), 'public', 'subs', body.inputProps.subtitlesFile);
-          const content = await fs.readFile(localPath, 'utf-8');
-          
-          await s3Client.send(new PutObjectCommand({
-            Bucket: bucketName,
-            Key: subtitleKey,
-            Body: content,
-            ContentType: 'application/json'
-          }));
-          console.log(`Successfully uploaded subtitle file to S3`);
-        } catch (uploadError) {
-          console.error('Failed to upload subtitle file to S3:', uploadError);
-        }
-      }
-    } else if (body.inputProps.audioSource && body.inputProps.audioSource.trim() !== '') {
-      // No subtitle file specified, but audio exists - generate subtitles
-      console.log(`Generating subtitles for ${body.inputProps.audioSource}...`);
+    // Always generate fresh subtitles if audio is provided
+    if (body.inputProps.audioSource && body.inputProps.audioSource.trim() !== '') {
+      console.log(`Generating fresh subtitles for ${body.inputProps.audioSource}...`);
       
       // Only process local audio files
       if (body.inputProps.isAudioLocal) {
-        // Use Whisper Lambda to generate subtitles
-        const subtitleFile = await generateSubtitlesWithWhisperLambda(
-          body.inputProps.audioSource,
-          bucketName
-        );
-        console.log("Subtitle generation result:", subtitleFile);
-        if (subtitleFile) {
-          // Set the subtitle file for the component to load from S3
-          body.inputProps.subtitlesFile = subtitleFile;
-          console.log(`Subtitles generated and will be loaded from S3: ${subtitleFile}`);
-        } else {
-          console.log('Warning: Subtitle generation failed, video will render without subtitles');
+        try {
+          // Generate subtitles using Whisper Lambda
+          const subtitleFile = await generateSubtitlesWithWhisperLambda(
+            body.inputProps.audioSource,
+            bucketName
+          );
+          
+          if (subtitleFile) {
+            console.log(`Subtitles generated: ${subtitleFile}`);
+            
+            // Load the generated subtitle data
+            const { createAWSClients } = await import("../../../../helpers/generate-subtitles-whisper-lambda");
+            const { s3Client } = createAWSClients();
+            const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+            
+            try {
+              const response = await s3Client.send(new GetObjectCommand({
+                Bucket: bucketName,
+                Key: `subs/${subtitleFile}`
+              }));
+              
+              const subtitleContent = await response.Body?.transformToString();
+              if (subtitleContent) {
+                const subtitleData = JSON.parse(subtitleContent);
+                
+                // Pass subtitle data directly in props
+                body.inputProps.subtitleData = subtitleData;
+                console.log(`Loaded ${subtitleData.length} subtitle segments to pass as data`);
+              }
+            } catch (error) {
+              console.error('Failed to load generated subtitles:', error);
+            }
+          } else {
+            console.log('Warning: Subtitle generation failed, video will render without subtitles');
+          }
+        } catch (error) {
+          console.error('Error generating subtitles:', error);
         }
       } else {
         console.log('Skipping subtitle generation for remote audio URL');
