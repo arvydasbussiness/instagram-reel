@@ -1,62 +1,4 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
-
-// Create S3 client inside function to ensure env vars are loaded
-function createS3Client() {
-  // Multiple ways to detect Lambda environment
-  const isLambda = !!(
-    process.env.AWS_LAMBDA_FUNCTION_NAME || 
-    process.env.LAMBDA_TASK_ROOT ||
-    process.env.AWS_EXECUTION_ENV?.includes('AWS_Lambda')
-  );
-  
-  const isRemotionLambda = process.env.REMOTION_LAMBDA === '1';
-  
-  console.log('S3 Client Environment Detection:', {
-    AWS_LAMBDA_FUNCTION_NAME: process.env.AWS_LAMBDA_FUNCTION_NAME || 'not set',
-    LAMBDA_TASK_ROOT: process.env.LAMBDA_TASK_ROOT || 'not set',
-    AWS_EXECUTION_ENV: process.env.AWS_EXECUTION_ENV || 'not set',
-    REMOTION_LAMBDA: process.env.REMOTION_LAMBDA || 'not set',
-    isLambda,
-    isRemotionLambda
-  });
-  
-  // In Lambda or Remotion Lambda environment
-  if (isLambda || isRemotionLambda) {
-    console.log('Creating S3 client for Lambda environment - using default provider chain');
-    return new S3Client({
-      region: process.env.AWS_REGION || process.env.REMOTION_AWS_REGION || "eu-north-1",
-      credentials: fromNodeProviderChain()
-    });
-  }
-  
-  // In development/local, use explicit credentials
-  const accessKeyId = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-  const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";
-
-  console.log('Creating S3 client for non-Lambda environment');
-  
-  // Only pass credentials if they exist
-  const clientConfig: {
-    region: string;
-    credentials?: {
-      accessKeyId: string;
-      secretAccessKey: string;
-    };
-  } = {
-    region: awsRegion
-  };
-
-  if (accessKeyId && secretAccessKey) {
-    clientConfig.credentials = {
-      accessKeyId,
-      secretAccessKey
-    };
-  }
-
-  return new S3Client(clientConfig);
-}
 
 export interface SubtitleSegment {
   start: number;
@@ -82,20 +24,43 @@ export async function loadSubtitlesFromS3(
     return subtitleCache[cacheKey];
   }
 
-  // Create S3 client
-  const s3Client = createS3Client();
-
   try {
-    // Determine bucket name
+    // Determine bucket name - might be the Remotion render bucket
     const bucket = bucketName || 
       process.env.REMOTION_S3_BUCKET_NAME || 
       process.env.REMOTION_APP_BUCKET_NAME ||
       'whisper-lambda-remotion-101';
 
+    // Try to get bucket from the site URL if available
+    const siteUrl = process.env.REMOTION_SERVE_URL;
+    if (!bucketName && siteUrl && siteUrl.includes('s3')) {
+      // Extract bucket from URL like https://remotionlambda-xxx.s3.region.amazonaws.com/
+      const match = siteUrl.match(/https:\/\/([^.]+)\.s3\./);
+      if (match) {
+        const remotionBucket = match[1];
+        console.log(`Detected Remotion bucket from serve URL: ${remotionBucket}`);
+        // But still use our whisper bucket for subtitles
+      }
+    }
+
     // Construct S3 key
     const s3Key = subtitleKey.startsWith('subs/') ? subtitleKey : `subs/${subtitleKey}`;
     
     console.log(`Loading subtitles from S3: s3://${bucket}/${s3Key}`);
+    console.log('Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      AWS_REGION: process.env.AWS_REGION,
+      AWS_EXECUTION_ENV: process.env.AWS_EXECUTION_ENV,
+      AWS_LAMBDA_FUNCTION_NAME: process.env.AWS_LAMBDA_FUNCTION_NAME,
+      REMOTION_SERVE_URL: process.env.REMOTION_SERVE_URL,
+    });
+
+    // Create S3 client with minimal configuration
+    // In Lambda, this will use the execution role
+    // In local dev, this will use environment variables
+    const s3Client = new S3Client({
+      region: process.env.AWS_REGION || process.env.REMOTION_AWS_REGION || 'eu-north-1'
+    });
 
     // Get from S3
     const response = await s3Client.send(new GetObjectCommand({
@@ -125,7 +90,7 @@ export async function loadSubtitlesFromS3(
 
   } catch (error) {
     console.error('Error loading subtitles from S3:', error);
-    throw error; // Re-throw the error instead of falling back to local files
+    throw error;
   }
 }
 
