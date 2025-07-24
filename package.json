@@ -11,6 +11,7 @@
     "@aws-sdk/client-lambda": "^3.851.0",
     "@aws-sdk/client-s3": "^3.850.0",
     "@aws-sdk/credential-providers": "^3.848.0",
+    "@aws-sdk/s3-request-presigner": "^3.850.0",
     "@remotion/bundler": "4.0.324",
     "@remotion/cli": "4.0.324",
     "@remotion/google-fonts": "4.0.324",

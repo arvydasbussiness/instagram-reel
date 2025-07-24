@@ -215,7 +215,8 @@ export async function generateSubtitlesWithWhisperLambda(
             Bucket: bucketName,
             Key: subtitleKey,
             Body: jsonContent,
-            ContentType: 'application/json'
+            ContentType: 'application/json',
+            ACL: 'public-read' // Make subtitle publicly readable
           }));
           
           // Save locally for immediate use
