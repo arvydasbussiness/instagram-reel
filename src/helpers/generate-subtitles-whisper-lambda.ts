@@ -6,6 +6,20 @@ import path from "path";
 
 // Create AWS clients inside functions to ensure env vars are loaded
 export function createAWSClients() {
+  // Check if running in Lambda using Lambda-specific environment variables
+  const isLambda = !!(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
+  
+  if (isLambda) {
+    console.log('Creating AWS clients for Lambda environment');
+    // In Lambda, use default credentials from execution role
+    const region = process.env.AWS_REGION || process.env.REMOTION_AWS_REGION || "eu-north-1";
+    return {
+      lambdaClient: new LambdaClient({ region }),
+      s3Client: new S3Client({ region })
+    };
+  }
+  
+  // In local/development, use explicit credentials
   const accessKeyId = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
   const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";

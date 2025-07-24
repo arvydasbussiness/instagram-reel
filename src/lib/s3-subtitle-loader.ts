@@ -3,10 +3,26 @@ import { getRemotionEnvironment } from 'remotion';
 
 // Create S3 client inside function to ensure env vars are loaded
 function createS3Client() {
+  const env = getRemotionEnvironment();
+  
+  // Check if running in Lambda/rendering environment (not Studio or Player)
+  const isRenderEnvironment = !env.isStudio && !env.isPlayer;
+  
+  // In Lambda/render environment, use default credentials from execution role
+  if (isRenderEnvironment) {
+    console.log('Creating S3 client for render/Lambda environment');
+    return new S3Client({
+      region: process.env.AWS_REGION || process.env.REMOTION_AWS_REGION || "eu-north-1"
+    });
+  }
+  
+  // In development/local, use explicit credentials
   const accessKeyId = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
   const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";
 
+  console.log('Creating S3 client for Studio/Player environment');
+  
   // Only pass credentials if they exist
   const clientConfig: {
     region: string;
