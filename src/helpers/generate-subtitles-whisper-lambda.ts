@@ -4,8 +4,36 @@ import { SubtitleSegment } from "../lib/whisper-subtitles";
 import fs from "fs/promises";
 import path from "path";
 
-const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || "eu-north-1" });
-const s3Client = new S3Client({ region: process.env.AWS_REGION || "eu-north-1" });
+// Create AWS clients inside functions to ensure env vars are loaded
+function createAWSClients() {
+  const accessKeyId = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";
+
+  // Debug logging
+  console.log('Creating AWS clients with:', {
+    hasAccessKeyId: !!accessKeyId,
+    hasSecretKey: !!secretAccessKey,
+    region: awsRegion,
+  });
+
+  // Only pass credentials if they exist
+  const clientConfig: any = {
+    region: awsRegion
+  };
+
+  if (accessKeyId && secretAccessKey) {
+    clientConfig.credentials = {
+      accessKeyId,
+      secretAccessKey
+    };
+  }
+
+  return {
+    lambdaClient: new LambdaClient(clientConfig),
+    s3Client: new S3Client(clientConfig)
+  };
+}
 
 /**
  * Parse WebVTT format to subtitle segments
@@ -66,9 +94,41 @@ export async function generateSubtitlesWithWhisperLambda(
     return null;
   }
 
+  // Create AWS clients
+  const { lambdaClient, s3Client } = createAWSClients();
+
   const audioNameWithoutExt = audioFileName.replace(/\.(mp3|wav|m4a|aac|ogg|flac)$/i, "");
   const subtitleKey = `subs/${audioNameWithoutExt}.json`;
   const localSubtitlePath = path.join(process.cwd(), 'public', 'subs', `${audioNameWithoutExt}.json`);
+  
+  // Check if audio file needs to be uploaded to S3
+  const audioKey = `audio/${audioFileName}`;
+  const localAudioPath = path.join(process.cwd(), 'public', 'audio', audioFileName);
+  
+  // Check if audio exists in S3, if not upload it
+  try {
+    await s3Client.send(new HeadObjectCommand({
+      Bucket: bucketName,
+      Key: audioKey
+    }));
+    console.log(`Audio file already exists in S3: s3://${bucketName}/${audioKey}`);
+  } catch (error) {
+    // Audio doesn't exist in S3, upload it
+    console.log(`Uploading audio file to S3: ${audioKey}`);
+    try {
+      const audioContent = await fs.readFile(localAudioPath);
+      await s3Client.send(new PutObjectCommand({
+        Bucket: bucketName,
+        Key: audioKey,
+        Body: audioContent,
+        ContentType: 'audio/mpeg' // Adjust based on file type
+      }));
+      console.log(`Audio file uploaded successfully to S3`);
+    } catch (uploadError) {
+      console.error('Failed to upload audio to S3:', uploadError);
+      throw new Error(`Failed to upload audio file: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+    }
+  }
   
   // Check if subtitle already exists locally
   try {

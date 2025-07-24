@@ -17,6 +17,9 @@ export const CompositionProps = z.object({
   // Subtitle settings (optional)
   subtitlesFile: z.string().optional(),
   bucketName: z.string().optional(),
+  
+  // Debug settings
+  showDebugInfo: z.boolean().optional(),
 });
 
 export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
@@ -28,6 +31,9 @@ export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
   audioStartFrom: undefined,
   audioEndAt: undefined,
   audioDelay: 0,
+  subtitlesFile: "test-audio.json", // Add test subtitle file
+  bucketName: undefined,
+  showDebugInfo: true, // Enable debug info to see what's happening
 };
 
 export const DURATION_IN_FRAMES = 900;

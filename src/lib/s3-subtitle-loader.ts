@@ -1,9 +1,26 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getRemotionEnvironment } from 'remotion';
 
-const s3Client = new S3Client({ 
-  region: process.env.AWS_REGION || process.env.REMOTION_AWS_REGION || "eu-north-1" 
-});
+// Create S3 client inside function to ensure env vars are loaded
+function createS3Client() {
+  const accessKeyId = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";
+
+  // Only pass credentials if they exist
+  const clientConfig: any = {
+    region: awsRegion
+  };
+
+  if (accessKeyId && secretAccessKey) {
+    clientConfig.credentials = {
+      accessKeyId,
+      secretAccessKey
+    };
+  }
+
+  return new S3Client(clientConfig);
+}
 
 export interface SubtitleSegment {
   start: number;
@@ -28,6 +45,9 @@ export async function loadSubtitlesFromS3(
     console.log(`Using cached subtitles for ${cacheKey}`);
     return subtitleCache[cacheKey];
   }
+
+  // Create S3 client
+  const s3Client = createS3Client();
 
   try {
     // Determine bucket name

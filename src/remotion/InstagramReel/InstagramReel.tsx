@@ -8,7 +8,8 @@ import {
   staticFile,
   Sequence,
   continueRender,
-  delayRender
+  delayRender,
+  getRemotionEnvironment
 } from 'remotion';
 import { loadSubtitlesFromS3, SubtitleSegment, getSubtitleAtTime } from '../../lib/s3-subtitle-loader';
 
@@ -88,6 +89,13 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   showDebugInfo = false,
   bucketName,
 }) => {
+  // Debug logging
+  console.log('InstagramReel props received:', {
+    subtitlesFile,
+    bucketName,
+    audioSource,
+  });
+  
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
   const currentTime = frame / fps;
@@ -106,25 +114,53 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
     ? (isAudioLocal ? staticFile(`audio/${audioSource}`) : audioSource)
     : null;
 
-  // Load subtitles from S3
+  // Load subtitles
   React.useEffect(() => {
-    if (subtitlesFile && subtitlesFile.trim() !== '') {
-      setLoadingStatus('Loading subtitles from S3...');
-      
-      loadSubtitlesFromS3(subtitlesFile, bucketName)
-        .then(loadedSubtitles => {
-          setSubtitles(loadedSubtitles);
-          setLoadingStatus(`Loaded ${loadedSubtitles.length} subtitles`);
-          if (handle) continueRender(handle);
-        })
-        .catch(error => {
-          console.error('Failed to load subtitles:', error);
-          setLoadingStatus('Failed to load subtitles');
-          if (handle) continueRender(handle);
-        });
-    } else if (handle) {
-      continueRender(handle);
+    async function loadSubtitles() {
+      if (!subtitlesFile || subtitlesFile.trim() === '') {
+        if (handle) continueRender(handle);
+        return;
+      }
+
+      try {
+        setLoadingStatus('Loading subtitles...');
+        
+        // Check if we're in development/studio
+        const env = getRemotionEnvironment();
+        
+        if (env.isStudio || env.isPlayer) {
+          // In development, try to load from local file first
+          try {
+            console.log(`Loading local subtitle file: subs/${subtitlesFile}`);
+            const response = await fetch(staticFile(`subs/${subtitlesFile}`));
+            const data = await response.json();
+            
+            if (Array.isArray(data)) {
+              setSubtitles(data);
+              setLoadingStatus(`Loaded ${data.length} subtitles from local file`);
+              console.log(`Successfully loaded ${data.length} subtitles from local file`);
+              if (handle) continueRender(handle);
+              return;
+            }
+          } catch (localError) {
+            console.log('Failed to load local subtitles, trying S3...', localError);
+          }
+        }
+        
+        // Load from S3 (for Lambda or if local fails)
+        const loadedSubtitles = await loadSubtitlesFromS3(subtitlesFile, bucketName);
+        setSubtitles(loadedSubtitles);
+        setLoadingStatus(`Loaded ${loadedSubtitles.length} subtitles from S3`);
+        if (handle) continueRender(handle);
+        
+      } catch (error) {
+        console.error('Failed to load subtitles:', error);
+        setLoadingStatus('Failed to load subtitles');
+        if (handle) continueRender(handle);
+      }
     }
+    
+    loadSubtitles();
   }, [subtitlesFile, bucketName, handle]);
 
   // Get current subtitle
@@ -192,6 +228,15 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
             </div>
             <div>Frame: {frame} / {durationInFrames}</div>
             <div>Time: {currentTime.toFixed(2)}s</div>
+            <div>Audio: {audioSource || 'None'}</div>
+            <div>Audio Delay: {audioDelay} frames</div>
+            <div style={{ marginTop: 10 }}>
+              <strong>Subtitles:</strong>
+              <div>File: {subtitlesFile || 'None'}</div>
+              <div>Status: {loadingStatus}</div>
+              <div>Count: {subtitles.length}</div>
+              <div>Current: {currentSubtitle ? currentSubtitle.text.substring(0, 50) + '...' : 'None'}</div>
+            </div>
             <div>Adjusted Time: {(currentTime - audioDelay / fps).toFixed(2)}s</div>
             
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #555' }}>

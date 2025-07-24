@@ -14,9 +14,23 @@ import { RenderRequest } from "../../../../../types/schema";
 import { executeApi } from "../../../../helpers/api-response";
 import { generateSubtitlesWithWhisperLambda } from "../../../../helpers/generate-subtitles-whisper-lambda";
 
+// Load environment variables
+import dotenv from 'dotenv';
+dotenv.config();
+
 export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
   RenderRequest,
   async (req, body) => {
+    
+    // Debug environment variables
+    console.log('Environment check in render route:', {
+      REMOTION_AWS_ACCESS_KEY_ID: !!process.env.REMOTION_AWS_ACCESS_KEY_ID,
+      AWS_ACCESS_KEY_ID: !!process.env.AWS_ACCESS_KEY_ID,
+      REMOTION_AWS_SECRET_ACCESS_KEY: !!process.env.REMOTION_AWS_SECRET_ACCESS_KEY,
+      AWS_SECRET_ACCESS_KEY: !!process.env.AWS_SECRET_ACCESS_KEY,
+      REMOTION_AWS_REGION: process.env.REMOTION_AWS_REGION,
+      AWS_REGION: process.env.AWS_REGION,
+    });
 
     if (
       !process.env.AWS_ACCESS_KEY_ID &&
@@ -42,18 +56,23 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
     if (body.inputProps.audioSource && body.inputProps.audioSource.trim() !== '') {
       console.log(`Generating subtitles for ${body.inputProps.audioSource}...`);
       
-      // Use Whisper Lambda to generate subtitles
-      const subtitleFile = await generateSubtitlesWithWhisperLambda(
-        body.inputProps.audioSource,
-        bucketName
-      );
-      
-      if (subtitleFile) {
-        // Set the subtitle file for the component to load from S3
-        body.inputProps.subtitlesFile = subtitleFile;
-        console.log(`Subtitles generated and will be loaded from S3: ${subtitleFile}`);
+      // Only process local audio files
+      if (body.inputProps.isAudioLocal) {
+        // Use Whisper Lambda to generate subtitles
+        const subtitleFile = await generateSubtitlesWithWhisperLambda(
+          body.inputProps.audioSource,
+          bucketName
+        );
+        console.log("Subtitle generation result:", subtitleFile);
+        if (subtitleFile) {
+          // Set the subtitle file for the component to load from S3
+          body.inputProps.subtitlesFile = subtitleFile;
+          console.log(`Subtitles generated and will be loaded from S3: ${subtitleFile}`);
+        } else {
+          console.log('Warning: Subtitle generation failed, video will render without subtitles');
+        }
       } else {
-        console.log('Warning: Subtitle generation failed, video will render without subtitles');
+        console.log('Skipping subtitle generation for remote audio URL');
       }
     }
     
@@ -61,6 +80,9 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
     if (!body.inputProps.bucketName) {
       body.inputProps.bucketName = bucketName;
     }
+
+    // Debug log the final inputProps
+    console.log('Final inputProps being sent to Lambda:', JSON.stringify(body.inputProps, null, 2));
 
     const result = await renderMediaOnLambda({
       codec: "h264",
