@@ -5,7 +5,7 @@ import fs from "fs/promises";
 import path from "path";
 
 // Create AWS clients inside functions to ensure env vars are loaded
-function createAWSClients() {
+export function createAWSClients() {
   const accessKeyId = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
   const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";

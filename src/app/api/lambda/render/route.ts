@@ -13,6 +13,8 @@ import {
 import { RenderRequest } from "../../../../../types/schema";
 import { executeApi } from "../../../../helpers/api-response";
 import { generateSubtitlesWithWhisperLambda } from "../../../../helpers/generate-subtitles-whisper-lambda";
+import fs from "fs/promises";
+import path from "path";
 
 // Load environment variables
 import dotenv from 'dotenv';
@@ -52,8 +54,44 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
 
     const bucketName = process.env.REMOTION_S3_BUCKET_NAME || SITE_NAME.split('/').pop() || 'your-remotion-bucket';
 
-    // Always generate subtitles if audio is provided
-    if (body.inputProps.audioSource && body.inputProps.audioSource.trim() !== '') {
+    // Handle subtitles - either use existing or generate new ones
+    if (body.inputProps.subtitlesFile && body.inputProps.subtitlesFile.trim() !== '') {
+      // Subtitles file is already specified, ensure it's uploaded to S3
+      console.log(`Using existing subtitle file: ${body.inputProps.subtitlesFile}`);
+      
+      // Check if it needs to be uploaded from local to S3
+      const { createAWSClients } = await import("../../../../helpers/generate-subtitles-whisper-lambda");
+      const { s3Client } = createAWSClients();
+      const { HeadObjectCommand, PutObjectCommand } = await import("@aws-sdk/client-s3");
+      const subtitleKey = `subs/${body.inputProps.subtitlesFile}`;
+      
+      try {
+        // Check if already in S3
+        await s3Client.send(new HeadObjectCommand({
+          Bucket: bucketName,
+          Key: subtitleKey
+        }));
+        console.log(`Subtitle file already exists in S3: ${subtitleKey}`);
+      } catch (error) {
+        // Not in S3, try to upload from local
+        console.log(`Uploading local subtitle file to S3: ${subtitleKey}`);
+        try {
+          const localPath = path.join(process.cwd(), 'public', 'subs', body.inputProps.subtitlesFile);
+          const content = await fs.readFile(localPath, 'utf-8');
+          
+          await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: subtitleKey,
+            Body: content,
+            ContentType: 'application/json'
+          }));
+          console.log(`Successfully uploaded subtitle file to S3`);
+        } catch (uploadError) {
+          console.error('Failed to upload subtitle file to S3:', uploadError);
+        }
+      }
+    } else if (body.inputProps.audioSource && body.inputProps.audioSource.trim() !== '') {
+      // No subtitle file specified, but audio exists - generate subtitles
       console.log(`Generating subtitles for ${body.inputProps.audioSource}...`);
       
       // Only process local audio files
