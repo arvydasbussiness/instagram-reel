@@ -12,21 +12,10 @@ import {
   getRemotionEnvironment
 } from 'remotion';
 import { loadSubtitlesFromS3, SubtitleSegment, getSubtitleAtTime } from '../../lib/s3-subtitle-loader';
+import { z } from 'zod';
+import { CompositionProps } from '../../../types/constants';
 
-export interface InstagramReelProps {
-  videoSource: string;
-  isLocalFile?: boolean;
-  audioSource?: string;
-  isAudioLocal?: boolean;
-  audioVolume?: number;
-  audioStartFrom?: number;
-  audioEndAt?: number;
-  audioDelay?: number;
-  subtitlesFile?: string;
-  subtitleStyle?: 'instagram' | 'classic';
-  showDebugInfo?: boolean;
-  bucketName?: string;
-}
+export type InstagramReelProps = z.infer<typeof CompositionProps>;
 
 // Simple subtitle renderer
 const SubtitleDisplay: React.FC<{ 

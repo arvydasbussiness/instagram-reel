@@ -17,6 +17,7 @@ export const CompositionProps = z.object({
   // Subtitle settings (optional)
   subtitlesFile: z.string().optional(),
   bucketName: z.string().optional(),
+  subtitleStyle: z.enum(['instagram', 'classic']).optional(),
   
   // Debug settings
   showDebugInfo: z.boolean().optional(),
@@ -33,6 +34,7 @@ export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
   audioDelay: 0,
   subtitlesFile: "test-audio.json", // Add test subtitle file
   bucketName: undefined,
+  subtitleStyle: 'instagram', // Add subtitle style
   showDebugInfo: true, // Enable debug info to see what's happening
 };
 
