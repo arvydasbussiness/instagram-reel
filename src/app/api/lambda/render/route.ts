@@ -36,43 +36,24 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
       );
     }
 
-    // Generate subtitles if audio is provided but no subtitle file specified
-    if (body.inputProps.audioSource && 
-        body.inputProps.audioSource.trim() !== '' && 
-        (!body.inputProps.subtitlesFile || body.inputProps.subtitlesFile.trim() === '')) {
-      
+    const bucketName = process.env.REMOTION_S3_BUCKET_NAME || SITE_NAME.split('/').pop() || 'your-remotion-bucket';
+
+    // Always generate subtitles if audio is provided
+    if (body.inputProps.audioSource && body.inputProps.audioSource.trim() !== '') {
       console.log(`Generating subtitles for ${body.inputProps.audioSource}...`);
       
       // Use Whisper Lambda to generate subtitles
-      const bucketName = process.env.REMOTION_S3_BUCKET_NAME || SITE_NAME.split('/').pop() || 'your-remotion-bucket';
       const subtitleFile = await generateSubtitlesWithWhisperLambda(
         body.inputProps.audioSource,
         bucketName
       );
       
       if (subtitleFile) {
+        // Set the subtitle file for the component to load from S3
         body.inputProps.subtitlesFile = subtitleFile;
-        console.log(`Subtitles generated: ${subtitleFile}`);
-        
-        // Try to load the subtitle data and pass it directly
-        try {
-          const fs = await import('fs/promises');
-          const path = await import('path');
-          const subtitlePath = path.join(process.cwd(), 'public', 'subs', subtitleFile);
-          const subtitleContent = await fs.readFile(subtitlePath, 'utf8');
-          const subtitleData = JSON.parse(subtitleContent);
-          
-          // Pass subtitle data directly in props
-          body.inputProps.subtitlesData = subtitleData;
-          console.log(`Loaded ${subtitleData.length} subtitle segments into props`);
-        } catch (err) {
-          console.error('Could not load subtitle data:', err);
-        }
+        console.log(`Subtitles generated and will be loaded from S3: ${subtitleFile}`);
       } else {
-        // Fallback: assume subtitles might exist with expected name
-        const audioNameWithoutExt = body.inputProps.audioSource.replace(/\.(mp3|wav|m4a|aac|ogg|flac)$/i, "");
-        body.inputProps.subtitlesFile = `${audioNameWithoutExt}.json`;
-        console.log(`Using expected subtitle file: ${body.inputProps.subtitlesFile}`);
+        console.log('Warning: Subtitle generation failed, video will render without subtitles');
       }
     }
     

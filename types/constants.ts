@@ -13,6 +13,10 @@ export const CompositionProps = z.object({
   audioStartFrom: z.number().optional(),
   audioEndAt: z.number().optional(),
   audioDelay: z.number(),
+  
+  // Subtitle settings (optional)
+  subtitlesFile: z.string().optional(),
+  bucketName: z.string().optional(),
 });
 
 export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
