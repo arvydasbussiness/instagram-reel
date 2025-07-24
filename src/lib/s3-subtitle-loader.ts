@@ -8,7 +8,13 @@ function createS3Client() {
   const awsRegion = process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "eu-north-1";
 
   // Only pass credentials if they exist
-  const clientConfig: any = {
+  const clientConfig: {
+    region: string;
+    credentials?: {
+      accessKeyId: string;
+      secretAccessKey: string;
+    };
+  } = {
     region: awsRegion
   };
 

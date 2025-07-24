@@ -18,7 +18,13 @@ export function createAWSClients() {
   });
 
   // Only pass credentials if they exist
-  const clientConfig: any = {
+  const clientConfig: {
+    region: string;
+    credentials?: {
+      accessKeyId: string;
+      secretAccessKey: string;
+    };
+  } = {
     region: awsRegion
   };
 
@@ -112,7 +118,7 @@ export async function generateSubtitlesWithWhisperLambda(
       Key: audioKey
     }));
     console.log(`Audio file already exists in S3: s3://${bucketName}/${audioKey}`);
-  } catch (error) {
+  } catch {
     // Audio doesn't exist in S3, upload it
     console.log(`Uploading audio file to S3: ${audioKey}`);
     try {
@@ -155,7 +161,7 @@ export async function generateSubtitlesWithWhisperLambda(
       console.log(`Downloaded existing subtitles from S3 to ${localSubtitlePath}`);
       return `${audioNameWithoutExt}.json`;
     }
-  } catch (error) {
+  } catch {
     // Subtitle doesn't exist in S3, need to generate
     console.log("Subtitles not found in S3, generating with Whisper Lambda...");
   }

@@ -20,7 +20,7 @@ export const RemotionRoot: React.FC = () => {
         fps={VIDEO_FPS}
         width={VIDEO_WIDTH}
         height={VIDEO_HEIGHT}
-        defaultProps={defaultMyCompProps as any}
+        defaultProps={defaultMyCompProps as Record<string, unknown>}
       />
       <Composition
         id="VideoInstructions"

@@ -58,6 +58,7 @@ const SubtitleDisplay: React.FC<{
             color: style === 'instagram' ? '#FFD700' : '#FFFFFF',
             fontSize: style === 'instagram' ? 48 : 36,
             fontWeight: style === 'instagram' ? '900' : '700',
+            // eslint-disable-next-line @remotion/slow-css-property
             textShadow: style === 'instagram' 
               ? '4px 4px 8px rgba(0, 0, 0, 0.9)' 
               : '2px 2px 4px rgba(0, 0, 0, 0.8)',

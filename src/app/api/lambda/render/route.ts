@@ -72,7 +72,7 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
           Key: subtitleKey
         }));
         console.log(`Subtitle file already exists in S3: ${subtitleKey}`);
-      } catch (error) {
+      } catch {
         // Not in S3, try to upload from local
         console.log(`Uploading local subtitle file to S3: ${subtitleKey}`);
         try {
