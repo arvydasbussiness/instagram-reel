@@ -47,12 +47,11 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "node generate-subtitle-module.mjs && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "remotion": "remotion studio",
     "render": "remotion render",
-    "deploy": "node generate-subtitle-module.mjs && node deploy.mjs",
-    "generate-subtitles": "node generate-subtitle-module.mjs"
+    "deploy": "node deploy.mjs"
   }
 }
