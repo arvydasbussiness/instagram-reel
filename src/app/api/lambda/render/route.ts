@@ -13,8 +13,6 @@ import {
 import { RenderRequest } from "../../../../../types/schema";
 import { executeApi } from "../../../../helpers/api-response";
 import { generateSubtitlesWithWhisperLambda } from "../../../../helpers/generate-subtitles-whisper-lambda";
-import fs from "fs/promises";
-import path from "path";
 
 // Load environment variables
 import dotenv from 'dotenv';
