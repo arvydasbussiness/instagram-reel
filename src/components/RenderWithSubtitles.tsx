@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { renderApi } from '../lib/api/renderApi';
 import { SubtitleSegment } from '../remotion/InstagramReel/components/Subtitles';
-import { defaultMyCompProps } from '../types/constants';
+import { defaultMyCompProps } from '../../types/constants';
 
 export const RenderWithSubtitles: React.FC = () => {
   const [isRendering, setIsRendering] = useState(false);
