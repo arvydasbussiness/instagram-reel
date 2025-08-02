@@ -12,7 +12,7 @@ import {
 } from "../../../../../config.mjs";
 import { RenderRequest } from "../../../../../types/schema";
 import { executeApi } from "../../../../helpers/api-response";
-import { transcriptService } from "../../../../services/transcriptService";
+import { transcriptService, TranscriptService } from "../../../../services/transcriptService";
 
 export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
   RenderRequest,
@@ -41,7 +41,7 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
     if (inputProps.autoTranscribe && !inputProps.subtitles && !inputProps.isLocalFile) {
       try {
         const service = inputProps.transcriptApiUrl 
-          ? new transcriptService.constructor(inputProps.transcriptApiUrl)
+          ? new TranscriptService(inputProps.transcriptApiUrl)
           : transcriptService;
 
         // Determine which source to transcribe

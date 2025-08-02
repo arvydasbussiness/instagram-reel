@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { SubtitleSegment } from '../remotion/InstagramReel/components/Subtitles';
-import { transcriptService } from '../services/transcriptService';
+import { transcriptService, TranscriptService } from '../services/transcriptService';
 
 interface UseTranscriptionOptions {
   apiUrl?: string;
@@ -21,7 +21,7 @@ export function useTranscription(options?: UseTranscriptionOptions): UseTranscri
   const [error, setError] = useState<string | null>(null);
 
   const service = options?.apiUrl 
-    ? new transcriptService.constructor(options.apiUrl) 
+    ? new TranscriptService(options.apiUrl) 
     : transcriptService;
 
   const transcribeFile = useCallback(async (file: File) => {

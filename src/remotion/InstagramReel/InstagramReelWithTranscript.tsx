@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { continueRender, delayRender } from 'remotion';
 import { InstagramReel, InstagramReelProps } from './InstagramReel';
 import { SubtitleSegment } from './components/Subtitles';
-import { transcriptService } from '../../services/transcriptService';
+import { transcriptService, TranscriptService } from '../../services/transcriptService';
 
 export interface InstagramReelWithTranscriptProps extends InstagramReelProps {
   autoTranscribe?: boolean; // Automatically transcribe the video/audio
@@ -40,7 +40,7 @@ export const InstagramReelWithTranscript: React.FC<InstagramReelWithTranscriptPr
         } else {
           // For URLs, we can use the transcribe-from-url endpoint
           const service = transcriptApiUrl 
-            ? new transcriptService.constructor(transcriptApiUrl) 
+            ? new TranscriptService(transcriptApiUrl) 
             : transcriptService;
           
           segments = await service.transcribeFromUrl(sourceToTranscribe);
