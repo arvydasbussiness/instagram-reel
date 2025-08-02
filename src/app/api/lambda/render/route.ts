@@ -36,16 +36,16 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
     }
 
     let inputProps = { ...body.inputProps };
-
+    console.log(inputProps.subtitles);
     // If auto-transcribe is enabled and no subtitles are provided
-    if (inputProps.autoTranscribe && !inputProps.subtitles && !inputProps.isLocalFile) {
+    if (inputProps.autoTranscribe && !inputProps.subtitles) {
       try {
         const service = inputProps.transcriptApiUrl 
           ? new TranscriptService(inputProps.transcriptApiUrl)
           : transcriptService;
 
         // Determine which source to transcribe
-        const sourceToTranscribe = inputProps.audioSource || inputProps.videoSource;
+        const sourceToTranscribe = inputProps.audioSource;
         
         if (sourceToTranscribe) {
           console.log('Auto-transcribing from URL:', sourceToTranscribe);

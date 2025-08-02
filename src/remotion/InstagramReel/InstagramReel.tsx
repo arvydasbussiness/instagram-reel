@@ -60,10 +60,10 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
             height: '100%',
             objectFit: 'cover',
           }}
-          // Always mute to allow autoplay
-          muted
+          // Mute video only if we have custom audio
+          muted={audioSource && audioSource.trim() !== '' ? true : false}
           // Control volume based on whether we have custom audio
-          volume={audioSource ? 0 : 1}
+          volume={audioSource && audioSource.trim() !== '' ? 0 : 1}
         />
       </AbsoluteFill>
 
