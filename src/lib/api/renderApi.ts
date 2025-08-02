@@ -1,6 +1,6 @@
 import { RenderMediaOnLambdaOutput } from "@remotion/lambda/client";
 import { z } from "zod";
-import { CompositionProps } from "../../types/constants";
+import { CompositionProps } from "../../../types/constants";
 import { SubtitleSegment } from "../../remotion/InstagramReel/components/Subtitles";
 
 interface RenderOptions {
