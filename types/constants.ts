@@ -1,6 +1,13 @@
 import { z } from "zod";
 export const COMP_NAME = "InstagramReel";
 
+// Subtitle segment schema
+export const SubtitleSegmentSchema = z.object({
+  text: z.string(),
+  start: z.number(),
+  end: z.number(),
+});
+
 export const CompositionProps = z.object({
   // Video settings
   videoSource: z.string(),
@@ -13,6 +20,12 @@ export const CompositionProps = z.object({
   audioStartFrom: z.number().optional(),
   audioEndAt: z.number().optional(),
   audioDelay: z.number(),
+  
+  // Subtitle settings
+  subtitles: z.array(SubtitleSegmentSchema).optional(),
+  enableSubtitles: z.boolean().optional(),
+  autoTranscribe: z.boolean().optional(),
+  transcriptApiUrl: z.string().optional(),
 });
 
 export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
@@ -24,6 +37,10 @@ export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
   audioStartFrom: undefined,
   audioEndAt: undefined,
   audioDelay: 0,
+  subtitles: undefined,
+  enableSubtitles: false,
+  autoTranscribe: false,
+  transcriptApiUrl: "http://13.48.58.235",
 };
 
 export const DURATION_IN_FRAMES = 900;

@@ -12,6 +12,8 @@ import {
 } from "../../../../../config.mjs";
 import { RenderRequest } from "../../../../../types/schema";
 import { executeApi } from "../../../../helpers/api-response";
+import { transcriptService } from "../../../../services/transcriptService";
+import { SubtitleSegment } from "../../../../remotion/InstagramReel/components/Subtitles";
 
 export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
   RenderRequest,
@@ -31,10 +33,39 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
       !process.env.REMOTION_AWS_SECRET_ACCESS_KEY
     ) {
       throw new TypeError(
-        "The environment variable REMOTION_AWS_SECRET_ACCESS_KEY is missing. Add it to your .env file.",
-      );
+        "The environment variable REMOTION_AWS_SECRET_ACCESS_KEY is missing. Add it to your .env file.",      );
     }
 
+    let inputProps = { ...body.inputProps };
+
+    // If auto-transcribe is enabled and no subtitles are provided
+    if (inputProps.autoTranscribe && !inputProps.subtitles && !inputProps.isLocalFile) {
+      try {
+        const service = inputProps.transcriptApiUrl 
+          ? new transcriptService.constructor(inputProps.transcriptApiUrl)
+          : transcriptService;
+
+        // Determine which source to transcribe
+        const sourceToTranscribe = inputProps.audioSource || inputProps.videoSource;
+        
+        if (sourceToTranscribe) {
+          console.log('Auto-transcribing from URL:', sourceToTranscribe);
+          const subtitles = await service.transcribeFromUrl(sourceToTranscribe);
+          
+          // Add subtitles to input props
+          inputProps = {
+            ...inputProps,
+            subtitles,
+            enableSubtitles: true,
+          };
+          
+          console.log(`Transcription successful: ${subtitles.length} subtitle segments`);
+        }
+      } catch (error) {
+        console.error('Transcription failed:', error);
+        // Continue without subtitles if transcription fails
+      }
+    }
     const result = await renderMediaOnLambda({
       codec: "h264",
       functionName: speculateFunctionName({
@@ -45,7 +76,7 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
       region: REGION as AwsRegion,
       serveUrl: SITE_NAME,
       composition: body.id,
-      inputProps: body.inputProps,
+      inputProps,
       framesPerLambda: 30,
       downloadBehavior: {
         type: "download",

@@ -1,10 +1,19 @@
+# Instagram Reel with Subtitle Integration
+
 <img src="https://github.com/remotion-dev/template-next/assets/1629785/9092db5f-7c0c-4d38-97c4-5f5a61f5cc098" />
 <br/>
 <br/>
 
-This is a Next.js template for building programmatic video apps, with [`@remotion/player`](https://remotion.dev/player) and [`@remotion/lambda`](https://remotion.dev/lambda) built in.
+This is a Next.js template for building Instagram Reels with automatic subtitle generation, powered by [`@remotion/player`](https://remotion.dev/player) and [`@remotion/lambda`](https://remotion.dev/lambda).
 
-This template uses the Next.js App directory, with TailwindCSS. There is a [Non-TailwindCSS version](https://github.com/remotion-dev/template-next-app-dir), and a [Pages directory version](https://github.com/remotion-dev/template-next-pages-dir) of this template available.
+## Features
+
+- 📹 Instagram Reel format (9:16 aspect ratio)
+- 🎬 Automatic subtitle generation from video/audio
+- ✨ Animated subtitle display
+- 🚀 Lambda rendering with subtitle support
+- 📝 Manual subtitle editor
+- 🔗 Transcript service integration
 
 <img src="https://github.com/remotion-dev/template-next/assets/1629785/c9c2e5ca-2637-4ec8-8e40-a8feb5740d88" />
 
@@ -59,6 +68,53 @@ You should run this script after:
 - changing the video template
 - changing `config.mjs`
 - upgrading Remotion to a newer version
+
+## Subtitle Integration
+
+### Configuration
+
+Set your transcript API URL in the environment:
+
+```bash
+TRANSCRIPT_API_URL=http://13.48.58.235
+```
+
+### Available Compositions
+
+1. **InstagramReel** - Basic reel without subtitles
+2. **InstagramReelWithSubtitles** - Auto-transcribes from URLs
+3. **InstagramReelWithExampleSubtitles** - Uses example subtitles
+
+### Lambda Render with Subtitles
+
+```javascript
+// Auto-transcribe from URL
+const response = await fetch('/api/lambda/render', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    id: 'InstagramReel',
+    inputProps: {
+      videoSource: 'https://example.com/video.mp4',
+      isLocalFile: false,
+      autoTranscribe: true,
+      enableSubtitles: true
+    }
+  })
+});
+```
+
+See [LAMBDA_RENDER_API.md](./LAMBDA_RENDER_API.md) for complete API documentation.
+
+### Testing
+
+```bash
+# Test transcript service
+node src/test/testTranscriptService.js
+
+# Test Lambda render with subtitles
+node src/test/testLambdaRender.js
+```
 
 ## Set up rendering on AWS Lambda
 

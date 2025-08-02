@@ -8,6 +8,7 @@ import {
   staticFile,
   Sequence
 } from 'remotion';
+import { Subtitles, SubtitleSegment } from './components/Subtitles';
 
 // Props interface for the Instagram Reel component
 export interface InstagramReelProps {
@@ -19,6 +20,8 @@ export interface InstagramReelProps {
   audioStartFrom?: number; // Start audio from specific frame
   audioEndAt?: number; // End audio at specific frame
   audioDelay?: number; // Delay audio by frames
+  subtitles?: SubtitleSegment[]; // Optional subtitles array
+  enableSubtitles?: boolean; // Enable/disable subtitles
 }
 
 export const InstagramReel: React.FC<InstagramReelProps> = ({ 
@@ -30,6 +33,8 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   audioStartFrom,
   audioEndAt,
   audioDelay = 0,
+  subtitles = [],
+  enableSubtitles = true,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -111,6 +116,11 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
       >
         {/* Add your text overlays, animations, etc. here */}
       </AbsoluteFill>
+
+      {/* Subtitles layer */}
+      {enableSubtitles && subtitles && subtitles.length > 0 && (
+        <Subtitles segments={subtitles} />
+      )}
     </AbsoluteFill>
   );
 };
