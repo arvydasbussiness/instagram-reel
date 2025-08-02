@@ -13,7 +13,6 @@ import {
 import { RenderRequest } from "../../../../../types/schema";
 import { executeApi } from "../../../../helpers/api-response";
 import { transcriptService } from "../../../../services/transcriptService";
-import { SubtitleSegment } from "../../../../remotion/InstagramReel/components/Subtitles";
 
 export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
   RenderRequest,

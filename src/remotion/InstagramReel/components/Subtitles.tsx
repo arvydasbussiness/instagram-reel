@@ -39,16 +39,6 @@ export const Subtitles: React.FC<SubtitlesProps> = ({ segments, style }) => {
     },
   });
 
-  // Exit animation
-  const exitProgress = spring({
-    frame: frame - segmentEndFrame + 10,
-    fps,
-    config: {
-      damping: 30,
-      mass: 0.5,
-    },
-  });
-
   const opacity = interpolate(
     frame,
     [segmentStartFrame, segmentStartFrame + 10, segmentEndFrame - 10, segmentEndFrame],
@@ -82,7 +72,6 @@ export const Subtitles: React.FC<SubtitlesProps> = ({ segments, style }) => {
           fontWeight: 'bold',
           lineHeight: 1.4,
           textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(5px)',
           ...style,
         }}
       >

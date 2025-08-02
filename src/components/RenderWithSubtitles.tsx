@@ -5,7 +5,10 @@ import { defaultMyCompProps } from '../types/constants';
 
 export const RenderWithSubtitles: React.FC = () => {
   const [isRendering, setIsRendering] = useState(false);
-  const [renderResult, setRenderResult] = useState<any>(null);
+  const [renderResult, setRenderResult] = useState<{
+    bucketName: string;
+    renderId: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [enableAutoTranscribe, setEnableAutoTranscribe] = useState(true);

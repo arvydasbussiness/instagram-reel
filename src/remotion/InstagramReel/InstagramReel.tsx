@@ -37,7 +37,7 @@ export const InstagramReel: React.FC<InstagramReelProps> = ({
   enableSubtitles = true,
 }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { durationInFrames } = useVideoConfig();
 
   // Determine the video source
   const videoSrc = isLocalFile 
