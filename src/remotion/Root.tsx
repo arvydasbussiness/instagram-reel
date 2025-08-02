@@ -12,12 +12,16 @@ import {
   defaultInstagramReelProps,
 } from "./InstagramReel/constants";
 
+// Type assertion to satisfy Remotion's component type requirements
+const InstagramReelComponent = InstagramReel as React.FC<Record<string, unknown>>;
+const InstagramReelWithTranscriptComponent = InstagramReelWithTranscript as React.FC<Record<string, unknown>>;
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
         id={INSTAGRAM_REEL_COMP_NAME}
-        component={InstagramReel}
+        component={InstagramReelComponent}
         durationInFrames={INSTAGRAM_REEL_DURATION}
         fps={INSTAGRAM_REEL_FPS}
         width={INSTAGRAM_REEL_WIDTH}
@@ -26,7 +30,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="InstagramReelWithSubtitles"
-        component={InstagramReelWithTranscript}
+        component={InstagramReelWithTranscriptComponent}
         durationInFrames={INSTAGRAM_REEL_DURATION}
         fps={INSTAGRAM_REEL_FPS}
         width={INSTAGRAM_REEL_WIDTH}
@@ -39,7 +43,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="InstagramReelWithExampleSubtitles"
-        component={InstagramReel}
+        component={InstagramReelComponent}
         durationInFrames={INSTAGRAM_REEL_DURATION}
         fps={INSTAGRAM_REEL_FPS}
         width={INSTAGRAM_REEL_WIDTH}

@@ -12,7 +12,7 @@ import { Subtitles, SubtitleSegment } from './components/Subtitles';
 
 // Props interface for the Instagram Reel component
 export interface InstagramReelProps {
-  videoSource: string; // Can be a URL or a local file name
+  videoSource?: string; // Can be a URL or a local file name
   isLocalFile?: boolean; // Flag to indicate if it's a local file
   audioSource?: string; // Optional audio file
   isAudioLocal?: boolean; // Flag for audio file location
@@ -25,7 +25,7 @@ export interface InstagramReelProps {
 }
 
 export const InstagramReel: React.FC<InstagramReelProps> = ({ 
-  videoSource, 
+  videoSource = 'test-video.mp4', 
   isLocalFile = true,
   audioSource,
   isAudioLocal = true,
