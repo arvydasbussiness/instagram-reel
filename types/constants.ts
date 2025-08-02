@@ -38,8 +38,8 @@ export const defaultMyCompProps: z.infer<typeof CompositionProps> = {
   audioEndAt: undefined,
   audioDelay: 0,
   subtitles: undefined,
-  enableSubtitles: false,
-  autoTranscribe: false,
+  enableSubtitles: true,
+  autoTranscribe: true,
   transcriptApiUrl: "http://13.48.58.235",
 };
 

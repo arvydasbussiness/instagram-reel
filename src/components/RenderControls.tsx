@@ -6,8 +6,11 @@ import { DownloadButton } from "./DownloadButton";
 import { ErrorComp } from "./Error";
 import { ProgressBar } from "./ProgressBar";
 import { Spacing } from "./Spacing";
-import { COMP_NAME, CompositionProps } from "../../types/constants";
+import { CompositionProps } from "../../types/constants";
 import { useRendering } from "../helpers/use-rendering";
+
+// Use the subtitle composition by default
+const COMP_NAME = "InstagramReelWithSubtitles";
 
 export const RenderControls: React.FC<{
   inputProps: z.infer<typeof CompositionProps>;
