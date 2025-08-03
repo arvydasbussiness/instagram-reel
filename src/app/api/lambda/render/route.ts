@@ -36,9 +36,15 @@ export const POST = executeApi<RenderMediaOnLambdaOutput, typeof RenderRequest>(
     }
 
     let inputProps = { ...body.inputProps };
-    console.log("subtitles: " + inputProps.subtitles);
+    if(!inputProps.subtitles)
+    throw new TypeError(
+        "subtitles1",      );
+    if(inputProps.subtitles)
+    throw new TypeError(
+        "subtitles1",      );
+
     // If auto-transcribe is enabled and no subtitles are provided
-    if (inputProps.autoTranscribe && !inputProps.subtitles) {
+    if (inputProps.autoTranscribe ) {
       try {
         const service = inputProps.transcriptApiUrl 
           ? new TranscriptService(inputProps.transcriptApiUrl)
