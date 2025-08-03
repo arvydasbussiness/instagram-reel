@@ -60,7 +60,7 @@ export class TranscriptService {
    * Transcribe from URL
    */  async transcribeFromUrl(url: string): Promise<SubtitleSegment[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/transcribe-url`, {
+      const response = await fetch(`${this.baseUrl}/transcribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
